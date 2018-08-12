@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 10.00
+# Visual Studio 2008
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Win32_MemDC", "Win32_MemDC.vcproj", "{D2EFBEA3-92FA-4A95-8F4C-07C2C7F71ABD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{D2EFBEA3-92FA-4A95-8F4C-07C2C7F71ABD}.Debug|Win32.ActiveCfg = Debug|Win32
+		{D2EFBEA3-92FA-4A95-8F4C-07C2C7F71ABD}.Debug|Win32.Build.0 = Debug|Win32
+		{D2EFBEA3-92FA-4A95-8F4C-07C2C7F71ABD}.Release|Win32.ActiveCfg = Release|Win32
+		{D2EFBEA3-92FA-4A95-8F4C-07C2C7F71ABD}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
