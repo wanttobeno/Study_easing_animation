@@ -14,6 +14,10 @@
 #define RadToAng(x) (double(x)/PI*180)			    // 弧度制转化为角度制
 #define DISTANCE(pt1,pt2) sqrt((float)(pt1.x-pt2.x)*(pt1.x-pt2.x)+(pt1.y-pt2.y)*(pt1.y-pt2.y))	   // 计算两点之间的距离 
 
+HandleBall::HandleBall()
+{
+	m_MemDc = 0;
+}
 
 /*==================HandleBall类成员函数的实现==================*/
 /*********************公有成员函数实现部分***********************/
@@ -58,20 +62,23 @@ HandleBall::~HandleBall()
 		delete this->m_pBalls[i];
 }
 
+void HandleBall::SetMemDc(HDC hdc)
+{
+	m_MemDc = hdc;
+}
+
 void HandleBall::Show(COLORREF col,bool isErase)
 {
 	int i;
-	HDC hdc=GetDC(m_hWnd);
 	if(false==isErase)
 	{	for(i=0;i<BALLNUMBER;i++)
-			this->m_pBalls[i]->draw(hdc,0,false);	
+	this->m_pBalls[i]->draw(m_MemDc, 0, false);
 	}
 	else
 	{
 		for(i=0;i<BALLNUMBER;i++)
-			this->m_pBalls[i]->draw(hdc,col,true);
+			this->m_pBalls[i]->draw(m_MemDc, col, true);
 	}
-	ReleaseDC(m_hWnd,hdc);
 }
 
 void HandleBall::Move(int mLen, bool UseDefault)

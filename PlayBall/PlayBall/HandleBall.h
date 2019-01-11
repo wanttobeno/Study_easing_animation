@@ -22,9 +22,13 @@ private:
 	ball *m_pBalls[BALLNUMBER];		// 指向球类的指针数组
 	int m_BallAngles[BALLNUMBER];		// 对应球移动的偏移角度
 	HWND m_hWnd;						// 窗口句柄
+	HDC  m_MemDc;
+
 
 	int m_MoveLen;					// 球移动的位移量
 	int m_ball_r;						// 各球的半径
+
+	
 
 	//	私有函数定义
 	int Reflect(int aSrc,int aRef);													// 返回aSrc方向按照aRef方向反射之后的方向 
@@ -34,9 +38,10 @@ private:
 	bool isTwoBallHit(ball* pActive,ball* pPassive,int *aActive,int *aPassive);		// 考察主动球pActive是否与被动球pPassive相撞，相撞则将两球撞后方向分别填入aActive和aPassive之中
 	//	int DirectTwoPoint(POINT pt_src,POINT pt_dest);									// 返回以pt_src为起点，指向pt_dest的射线方向
 public:		
-	HandleBall(){;}								//
+	HandleBall();								//
 	bool init(HWND hWnd,int ball_r,int MoveLen);		// 初始化函数完成成员变量的初始化以及相应对象的创建
 	~HandleBall();										// 完成垃圾清理工作
+	void SetMemDc(HDC hdc);
 	void Show(COLORREF col,bool isErase);				// 如果isErase为真则用col显示所有的球（可以用来擦除）,否则col无效
 	void Move(int mLen,bool UseDefault);				// 移动此对象所有的球，如果UseDefault为真则用对象内部的移动位移量，为假则用mLen
 	int DirectTwoPoint(POINT pt_src,POINT pt_dest);

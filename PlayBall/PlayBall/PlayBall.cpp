@@ -53,6 +53,9 @@ HandleBall g_HandleBallInst;						// 对象实例
 int g_TransUp=0;								// 窗体透明度
 int g_TransDown=255;							
 
+HDC g_hCompatibleDC = 0;						// 兼容DC
+HDC g_hdcBk = 0;
+HDC g_hDc;
 
 // 此代码模块中包含的函数的前向声明:
 ATOM				MyRegisterClass(HINSTANCE hInstance);
@@ -159,7 +162,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	int wmId, wmEvent;
 	PAINTSTRUCT ps;
 	HDC hdc;
-	HDC hCompatibleDC;			// 兼容DC
+
 	RECT WndRect,ClientRect;
 	HMENU hSubMenu;
 
@@ -176,7 +179,16 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	switch (message)
 	{
 	case WM_CREATE:
-
+	{
+					  g_hDc = GetDC(hWnd);
+					  g_hCompatibleDC = CreateCompatibleDC(g_hDc);
+					  RECT rt = { 0 };
+					  GetClientRect(GetDesktopWindow(), &rt);
+					  HBITMAP hBitmap = CreateCompatibleBitmap(g_hDc, rt.right, rt.bottom);
+					  HGDIOBJ oldObj = SelectObject(g_hCompatibleDC, hBitmap);
+					  g_hdcBk = CreateCompatibleDC(g_hDc);
+					  SelectObject(g_hdcBk, g_hbmpBg);
+	}
 		SetTimer(hWnd,ID_TRANS_UP,TRANS_TINTERVAL,NULL);
 		// 操作菜单
 		g_hMenu=GetMenu(hWnd);
@@ -191,7 +203,7 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 
 		// 初始化对象
 		Init(hWnd,&g_HandleBallInst);
-
+		g_HandleBallInst.SetMemDc(g_hCompatibleDC);
 		break;
 	case WM_COMMAND:
 		wmId    = LOWORD(wParam);
@@ -241,23 +253,21 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 	case WM_PAINT:
 		hdc = BeginPaint(hWnd, &ps);
 		// TODO: 在此添加任意绘图代码...
-		if(g_isInit && (hCompatibleDC=CreateCompatibleDC(hdc)))
+		if(g_isInit)
 		{
 			// 处于初始化之中则显示背景图片
 			GetClientRect(hWnd,&ClientRect);
-			SelectObject(hCompatibleDC,g_hbmpBg);
-			BitBlt(hdc,(ClientRect.right+ClientRect.left)/2-g_BgbmpInfo.bmWidth/2,(ClientRect.bottom+ClientRect.top)/2-g_BgbmpInfo.bmHeight/2,g_BgbmpInfo.bmWidth,g_BgbmpInfo.bmHeight,hCompatibleDC,0,0,SRCCOPY);
-			DeleteDC(hCompatibleDC);
+			SelectObject(g_hdcBk, g_hbmpBg);
+			BitBlt(hdc,(ClientRect.right+ClientRect.left)/2-g_BgbmpInfo.bmWidth/2,(ClientRect.bottom+ClientRect.top)/2-g_BgbmpInfo.bmHeight/2,g_BgbmpInfo.bmWidth,g_BgbmpInfo.bmHeight,g_hdcBk,0,0,SRCCOPY);
 		}
 		if(g_canShowBall)
 			g_HandleBallInst.Show(0,false);
-		if(!g_isInit && !g_isStart && (hCompatibleDC=CreateCompatibleDC(hdc)))
+		if(!g_isInit && !g_isStart )
 		{
 			// 非初始化之中且执行了停止动作
 			GetClientRect(hWnd,&ClientRect);
-			SelectObject(hCompatibleDC,g_hbmpDream);
-			BitBlt(hdc,(ClientRect.right+ClientRect.left)/2-g_DreamBmpInfo.bmWidth/2,(ClientRect.bottom+ClientRect.top)/2-g_DreamBmpInfo.bmHeight/2,g_DreamBmpInfo.bmWidth,g_DreamBmpInfo.bmHeight,hCompatibleDC,0,0,SRCCOPY);
-			DeleteDC(hCompatibleDC);
+			SelectObject(g_hdcBk, g_hbmpDream);
+			BitBlt(hdc,(ClientRect.right+ClientRect.left)/2-g_DreamBmpInfo.bmWidth/2,(ClientRect.bottom+ClientRect.top)/2-g_DreamBmpInfo.bmHeight/2,g_DreamBmpInfo.bmWidth,g_DreamBmpInfo.bmHeight,g_hdcBk,0,0,SRCCOPY);
 		}
 		EndPaint(hWnd, &ps);
 		break;
@@ -315,6 +325,10 @@ LRESULT CALLBACK WndProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam)
 		break;
 	case WM_CLOSE:
 		SetTimer(hWnd,ID_TRANS_DOWN,TRANS_TINTERVAL,NULL);
+		DeleteObject(SelectObject(g_hCompatibleDC, NULL));
+		ReleaseDC(hWnd,g_hdcBk);
+		ReleaseDC(hWnd,g_hCompatibleDC);
+		ReleaseDC(hWnd,g_hDc);
 		break;
 	case WM_DESTROY:
 		PostQuitMessage(0);
@@ -628,9 +642,19 @@ void OnTimer(HWND hWnd,WPARAM wParam ,LPARAM lParam)
 	switch(wParam)
 	{
 	case ID_BALL_MOVE:			// 球运动
-		g_HandleBallInst.Show(COL_BLACK,true);
-		g_HandleBallInst.Move(10,false);
-		g_HandleBallInst.Show(0,false);
+	{
+		HDC hdc = GetDC(hWnd);
+		RECT rtClient = { 0 };
+		GetClientRect(GetDesktopWindow(), &rtClient);
+		DeleteObject(SelectObject(g_hCompatibleDC, CreateCompatibleBitmap(hdc, rtClient.right, rtClient.bottom)));
+		HBRUSH br = CreateSolidBrush(0x808080);
+		FillRect(g_hCompatibleDC, &rtClient, br);
+		DeleteObject(br);
+		g_HandleBallInst.Move(10, false);
+		g_HandleBallInst.Show(0, false);
+		BitBlt(hdc, 0, 0, rtClient.right, rtClient.bottom, g_hCompatibleDC, 0, 0, SRCCOPY);
+		ReleaseDC(hWnd, hdc);
+	}
 		break;
 	case ID_TRANS_UP:			// 淡入
 		if(g_TransUp<=255)
@@ -775,11 +799,11 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevInstance,LPSTR lpCmdLine,i
 	{
 		GetObject(g_hbmpBg,sizeof(g_BgbmpInfo),&g_BgbmpInfo);
 	}
+
 	if(g_hbmpDream=LoadBitmap(hInstance,MAKEINTRESOURCEW(IDB_DREAM)))
 	{
 		GetObject(g_hbmpDream,sizeof(g_DreamBmpInfo),&g_DreamBmpInfo);
 	}
-
 
 	// 执行应用程序初始化:
 	if (!InitInstance (hInstance, nShowCmd))
